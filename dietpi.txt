@@ -8,13 +8,13 @@
 #------------------------------------------------------------------------------------------------------
 ##### Language/Regional Options #####
 # Locale: eg: "en_GB.UTF-8" / "de_DE.UTF-8" | One entry and UTF-8 ONLY!
-AUTO_SETUP_LOCALE=C.UTF-8
+AUTO_SETUP_LOCALE=en_US.UTF-8
 
 # Keyboard Layout eg: "gb" / "us" / "de" / "fr"
-AUTO_SETUP_KEYBOARD_LAYOUT=gb
+AUTO_SETUP_KEYBOARD_LAYOUT=us
 
 # Timezone eg: "Europe/London" / "America/New_York" | Full list (TZ*): https://en.wikipedia.org/wiki/List_of_tz_database_time_zones
-AUTO_SETUP_TIMEZONE=Europe/London
+AUTO_SETUP_TIMEZONE=Asia/Kolkata
 
 ##### Networking Options #####
 # Enable Ethernet or WiFi adapter: 1=enable | 0=disable

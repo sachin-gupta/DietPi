@@ -3,3 +3,5 @@ v6.31.TWEAK
 
 
 - DietPi build will take customizations from 'tweak' branch of repo 'sachin-gupta' on Github.
+- Modified Locale and Timezone default to en_US, Asia/Kolkata and US keyboard
+  - Locale: en_US.UTF-8, KEYBOARD_LAYOUT=us, TIMEZONE=Asia/Kolkata in dietpi.txt

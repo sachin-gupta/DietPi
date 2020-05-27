@@ -28,11 +28,15 @@
 	# Core globals
 	G_PROGRAM_NAME='DietPi-PREP'
 
+	# To take customization from 'tweak' branch of my repo 'sachin-gupta'
+	GITOWNER='sachin-gupta'
+	GITBRANCH='tweak'
+
 	#------------------------------------------------------------------------------------------------
 	# Critical checks and requirements to run this script
 	#------------------------------------------------------------------------------------------------
 	# Exit path for non-root executions
-	if (( $UID )); then
+	if (($UID)); then
 
 		echo -e '[FAILED] Root privileges required, please run this script with "sudo"\nIn case install the "sudo" package with root privileges:\n\t# apt install sudo\n'
 		exit 1
@@ -49,7 +53,7 @@
 
 	# APT: Prefer IPv4 by default to avoid hanging access attempts in some cases
 	# - NB: This needs to match the method in: /DietPi/dietpi/func/dietpi-set_hardware preferipv4 enable
-	echo 'Acquire::ForceIPv4 "true";' > /etc/apt/apt.conf.d/99-dietpi-force-ipv4
+	echo 'Acquire::ForceIPv4 "true";' >/etc/apt/apt.conf.d/99-dietpi-force-ipv4
 
 	# Allow PDiffs on RPi since the "slow implementation" argument is outdated and PDiffs allow lower download size and less disk I/O
 	[[ -f '/etc/apt/apt.conf.d/50raspi' ]] && rm /etc/apt/apt.conf.d/50raspi
@@ -67,7 +71,7 @@
 
 		if [[ $(uname -m) == 'aarch64' ]]; then
 
-			echo 'deb http://archive.debian.org/debian/ main contrib non-free' > /etc/apt/sources.list
+			echo 'deb http://archive.debian.org/debian/ main contrib non-free' >/etc/apt/sources.list
 
 		else
 
@@ -83,19 +87,18 @@
 	# Check for/Install APT packages required for this script to:
 	aAPT_PREREQS=(
 
-		'wget' # Download DietPi-Globals...
+		'wget'            # Download DietPi-Globals...
 		'ca-certificates' # ...via HTTPS
-		'locales' # Set C.UTF-8 locale
-		'whiptail' # G_WHIP
+		'locales'         # Set C.UTF-8 locale
+		'whiptail'        # G_WHIP
 
 	)
 	# - Pre-Buster: Support HTTPS sources for APT
 	grep -qE '(jessie|stretch)' /etc/os-release && aAPT_PREREQS+=('apt-transport-https')
 
-	for i in "${aAPT_PREREQS[@]}"
-	do
+	for i in "${aAPT_PREREQS[@]}"; do
 
-		if ! dpkg-query -s $i &> /dev/null && ! apt-get -y install $i; then
+		if ! dpkg-query -s $i &>/dev/null && ! apt-get -y install $i; then
 
 			echo -e "[FAILED] Unable to install $i, please try to install it manually:\n\t # apt install $i\n"
 			exit 1
@@ -109,25 +112,25 @@
 	# - NB: This needs to match the method in: /boot/dietpi/func/dietpi-set_hardware preferipv4 enable
 	if grep -q '^[[:blank:]]*prefer-family[[:blank:]]*=' /etc/wgetrc; then
 
- 		sed -i '/^[[:blank:]]*prefer-family[[:blank:]]*=/c\prefer-family = IPv4' /etc/wgetrc
+		sed -i '/^[[:blank:]]*prefer-family[[:blank:]]*=/c\prefer-family = IPv4' /etc/wgetrc
 
- 	elif grep -q '^[[:blank:]#;]*prefer-family[[:blank:]]*=' /etc/wgetrc; then
+	elif grep -q '^[[:blank:]#;]*prefer-family[[:blank:]]*=' /etc/wgetrc; then
 
- 		sed -i '/^[[:blank:]#;]*prefer-family[[:blank:]]*=/c\prefer-family = IPv4' /etc/wgetrc
+		sed -i '/^[[:blank:]#;]*prefer-family[[:blank:]]*=/c\prefer-family = IPv4' /etc/wgetrc
 
- 	else
+	else
 
- 		echo 'prefer-family = IPv4' >> /etc/wgetrc
+		echo 'prefer-family = IPv4' >>/etc/wgetrc
 
- 	fi
+	fi
 
 	# Setup locale
 	# - Remove existing settings that could break dpkg-reconfigure locales
-	> /etc/environment
+	>/etc/environment
 	[[ -f '/etc/default/locale' ]] && rm /etc/default/locale
 
 	# - NB: DEV, any changes here must be also rolled into function '/boot/dietpi/func/dietpi-set_software locale', for future script use
-	echo 'C.UTF-8 UTF-8' > /etc/locale.gen
+	echo 'C.UTF-8 UTF-8' >/etc/locale.gen
 	# - dpkg-reconfigure includes:
 	#	- "locale-gen": Generate locale(s) based on "/etc/locale.gen" or interactive selection.
 	#	- "update-locale": Add $LANG to "/etc/default/locale" based on generated locale(s) or interactive default language selection.
@@ -155,10 +158,11 @@
 			'master' ': Stable release branch (recommended)'
 			'beta' ': Public beta testing branch'
 			'dev' ': Unstable development branch'
+			'tweak' ': Personal tweaking branch'
 
 		)
 
-		if ! GITBRANCH=$(whiptail --title "$G_PROGRAM_NAME" --menu 'Please select the Git branch the installer should use:' --default-item 'master' --ok-button 'Ok' --cancel-button 'Exit' --backtitle "$G_PROGRAM_NAME" 12 80 3 "${aWHIP_BRANCH[@]}" 3>&1 1>&2 2>&3-); then
+		if ! GITBRANCH=$(whiptail --title "$G_PROGRAM_NAME" --menu 'Please select the Git branch the installer should use:' --default-item 'tweak' --ok-button 'Ok' --cancel-button 'Exit' --backtitle "$G_PROGRAM_NAME" 12 80 4 "${aWHIP_BRANCH[@]}" 3>&1 1>&2 2>&3-); then
 
 			echo -e '[ INFO ] No choice detected. Aborting...\n'
 			exit 0
@@ -199,8 +203,10 @@
 	G_INIT
 
 	# Apply Git info
-	G_GITOWNER=$GITOWNER; unset GITOWNER
-	G_GITBRANCH=$GITBRANCH; unset GITBRANCH
+	G_GITOWNER=$GITOWNER
+	unset GITOWNER
+	G_GITBRANCH=$GITBRANCH
+	unset GITBRANCH
 
 	# Detect the Debian version of this operating system
 	if grep -q 'jessie' /etc/os-release; then
@@ -255,7 +261,7 @@
 
 	fi
 
-	Main(){
+	Main() {
 
 		# Setup step, current (used in info)
 		SETUP_STEP=0
@@ -263,7 +269,8 @@
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Detecting existing DietPi system"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Detecting existing DietPi system"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 		if [[ -d '/DietPi' || -d '/boot/dietpi' ]]; then
@@ -276,8 +283,7 @@
 			[[ -f '/etc/systemd/system/dietpi-ramdisk.service' ]] && systemctl stop dietpi-ramdisk
 
 			# Disable DietPi services
-			for i in /etc/systemd/system/dietpi-*
-			do
+			for i in /etc/systemd/system/dietpi-*; do
 
 				[[ -f $i ]] && systemctl disable --now ${i##*/}
 				rm -Rfv $i
@@ -303,13 +309,13 @@
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Target system inputs"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Target system inputs"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
 		# Image creator
-		while :
-		do
+		while :; do
 			if [[ $IMAGE_CREATOR ]]; then
 
 				G_WHIP_RETURNED_VALUE=$IMAGE_CREATOR
@@ -337,8 +343,7 @@
 
 				)
 
-				for i in "${aDISALLOWED_NAMES[@]}"
-				do
+				for i in "${aDISALLOWED_NAMES[@]}"; do
 
 					if [[ ${G_WHIP_RETURNED_VALUE,,} =~ $i ]]; then
 
@@ -350,7 +355,7 @@
 				done
 				unset aDISALLOWED_NAMES
 
-				if (( $DISALLOWED_NAME )); then
+				if (($DISALLOWED_NAME)); then
 
 					G_WHIP_MSG "\"$G_WHIP_RETURNED_VALUE\" is reserved and cannot be used. Please try again."
 
@@ -368,8 +373,7 @@
 		G_DIETPI-NOTIFY 2 "Entered image creator: $IMAGE_CREATOR"
 
 		# Pre-image used/name
-		until [[ $PREIMAGE_INFO ]]
-		do
+		until [[ $PREIMAGE_INFO ]]; do
 
 			G_WHIP_INPUTBOX 'Please enter the name or URL of the pre-image you installed on this system, prior to running this script. This will be used to identify the pre-image credits.\n\nEG: Debian, Raspbian Lite, Meveric, FriendlyARM, or "forum.odroid.com/viewtopic.php?f=ABC&t=XYZ" etc.\n\nNB: An entry is required.'
 			PREIMAGE_INFO=$G_WHIP_RETURNED_VALUE
@@ -445,14 +449,12 @@
 
 		)
 
-		while :
-		do
+		while :; do
 
 			# Check for valid entry, e.g. when set via environment variabe
 			if disable_error=1 G_CHECK_VALIDINT "$HW_MODEL" 0; then
 
-				for i in "${G_WHIP_MENU_ARRAY[@]}"
-				do
+				for i in "${G_WHIP_MENU_ARRAY[@]}"; do
 
 					[[ $HW_MODEL == $i ]] && break 2
 
@@ -489,7 +491,7 @@
 
 			)
 
-			(( $G_HW_MODEL == 20 )) && G_WHIP_DEFAULT_ITEM=0 || G_WHIP_DEFAULT_ITEM=1
+			(($G_HW_MODEL == 20)) && G_WHIP_DEFAULT_ITEM=0 || G_WHIP_DEFAULT_ITEM=1
 			if G_WHIP_MENU 'Please select an option:'; then
 
 				WIFI_REQUIRED=$G_WHIP_RETURNED_VALUE
@@ -503,7 +505,7 @@
 
 		fi
 
-		(( $WIFI_REQUIRED )) && G_DIETPI-NOTIFY 2 'Marking WiFi as required' || G_DIETPI-NOTIFY 2 'Marking WiFi as NOT required'
+		(($WIFI_REQUIRED)) && G_DIETPI-NOTIFY 2 'Marking WiFi as required' || G_DIETPI-NOTIFY 2 'Marking WiFi as NOT required'
 
 		# Distro Selection
 		DISTRO_LIST_ARRAY=(
@@ -517,38 +519,35 @@
 		# - Enable/list available options based on criteria
 		#	NB: Whiptail uses 2 array indices per entry: value + description
 		G_WHIP_MENU_ARRAY=()
-		for ((i=0; i<${#DISTRO_LIST_ARRAY[@]}; i+=2))
-		do
+		for ((i = 0; i < ${#DISTRO_LIST_ARRAY[@]}; i += 2)); do
 
 			# Disable downgrades
-			if (( ${DISTRO_LIST_ARRAY[$i]} < $G_DISTRO )); then
+			if ((${DISTRO_LIST_ARRAY[$i]} < $G_DISTRO)); then
 
-				G_DIETPI-NOTIFY 2 "Disabled distro downgrade to${DISTRO_LIST_ARRAY[$i+1]%% (*}"
+				G_DIETPI-NOTIFY 2 "Disabled distro downgrade to${DISTRO_LIST_ARRAY[$i + 1]%% (*}"
 
 			# Enable option
 			else
 
-				G_WHIP_MENU_ARRAY+=( "${DISTRO_LIST_ARRAY[$i]}" "${DISTRO_LIST_ARRAY[$i+1]}" )
+				G_WHIP_MENU_ARRAY+=("${DISTRO_LIST_ARRAY[$i]}" "${DISTRO_LIST_ARRAY[$i + 1]}")
 
 			fi
 
 		done
 		unset DISTRO_LIST_ARRAY
 
-		if (( ! ${#G_WHIP_MENU_ARRAY[@]} )); then
+		if ((!${#G_WHIP_MENU_ARRAY[@]})); then
 
 			G_DIETPI-NOTIFY 1 'No available distro versions found for this system. Aborting...\n'
 			exit 1
 
 		fi
 
-		while :
-		do
+		while :; do
 
 			if disable_error=1 G_CHECK_VALIDINT "$DISTRO_TARGET" 0; then
 
-				for i in "${G_WHIP_MENU_ARRAY[@]}"
-				do
+				for i in "${G_WHIP_MENU_ARRAY[@]}"; do
 
 					[[ $DISTRO_TARGET == $i ]] && break 2
 
@@ -573,15 +572,15 @@ Currently installed: $G_DISTRO_NAME (ID: $G_DISTRO)"; then
 
 		done
 
-		if (( $DISTRO_TARGET == 4 )); then
+		if (($DISTRO_TARGET == 4)); then
 
 			DISTRO_TARGET_NAME='stretch'
 
-		elif (( $DISTRO_TARGET == 5 )); then
+		elif (($DISTRO_TARGET == 5)); then
 
 			DISTRO_TARGET_NAME='buster'
 
-		elif (( $DISTRO_TARGET == 6 )); then
+		elif (($DISTRO_TARGET == 6)); then
 
 			DISTRO_TARGET_NAME='bullseye'
 
@@ -597,7 +596,8 @@ Currently installed: $G_DISTRO_NAME (ID: $G_DISTRO)"; then
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Downloading and installing DietPi source code"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Downloading and installing DietPi source code"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
@@ -614,15 +614,15 @@ Currently installed: $G_DISTRO_NAME (ID: $G_DISTRO)"; then
 		G_DIETPI-NOTIFY 2 'Moving kernel and boot configuration to /boot'
 
 		# HW specific config.txt, boot.ini uEnv.txt
-		if (( $G_HW_MODEL < 10 )); then
+		if (($G_HW_MODEL < 10)); then
 
 			G_EXEC mv "DietPi-$G_GITBRANCH/config.txt" /boot/
 
-		elif (( $G_HW_MODEL == 11 )); then
+		elif (($G_HW_MODEL == 11)); then
 
 			G_EXEC mv "DietPi-$G_GITBRANCH/boot_xu4.ini" /boot/boot.ini
 
-		elif (( $G_HW_MODEL == 12 )); then
+		elif (($G_HW_MODEL == 12)); then
 
 			G_EXEC mv "DietPi-$G_GITBRANCH/boot_c2.ini" /boot/boot.ini
 
@@ -652,7 +652,8 @@ Currently installed: $G_DISTRO_NAME (ID: $G_DISTRO)"; then
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: APT configuration"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: APT configuration"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
@@ -662,7 +663,7 @@ Currently installed: $G_DISTRO_NAME (ID: $G_DISTRO)"; then
 		G_DISTRO=$DISTRO_TARGET G_DISTRO_NAME=$DISTRO_TARGET_NAME G_HW_MODEL=$G_HW_MODEL G_EXEC /boot/dietpi/func/dietpi-set_software apt-mirror default
 
 		# Meveric, update repo to use our EU mirror: https://github.com/MichaIng/DietPi/issues/1519#issuecomment-368234302
-		sed -Ei 's@https?://oph\.mdrjr\.net@http://fuzon.co.uk@' /etc/apt/sources.list.d/meveric* &> /dev/null
+		sed -Ei 's@https?://oph\.mdrjr\.net@http://fuzon.co.uk@' /etc/apt/sources.list.d/meveric* &>/dev/null
 
 		# (Re)create DietPi runtime and logs dir, used by G_AGx
 		G_EXEC mkdir -p /run/dietpi /var/tmp/dietpi/logs
@@ -684,7 +685,7 @@ APT::AutoRemove::SuggestsImportant "false";
 _EOF_'
 
 		G_DIETPI-NOTIFY 2 'Disable package state translation downloads'
-		echo 'Acquire::Languages "none";' > /etc/apt/apt.conf.d/98-dietpi-no_translations
+		echo 'Acquire::Languages "none";' >/etc/apt/apt.conf.d/98-dietpi-no_translations
 
 		G_EXEC_DESC='Preserve modified config files on APT update'
 		G_EXEC eval 'cat << _EOF_ > /etc/apt/apt.conf.d/99-dietpi-forceconf
@@ -697,38 +698,38 @@ _EOF_'
 		# DietPi list of minimal required packages, which must be installed:
 		aPACKAGES_REQUIRED_INSTALL=(
 
-			'apt-utils'		# Allows "debconf" to pre-configure APT packages for non-interactive install
-			'bash-completion'	# Auto completes a wide list of bash commands and options via <tab>
-			'bc'			# Bash calculator, e.g. for floating point calculation
-			'bzip2'			# (.tar).bz2 wrapper
-			'ca-certificates'	# Adds known ca-certificates, necessary to practically access HTTPS sources
-			'console-setup'		# DietPi-Config keyboard configuration + console fonts
-			'cron'			# Background job scheduler
-			'curl'			# Web address testing, downloading, uploading etc.
-			'debconf'		# APT package pre-configuration, e.g. "debconf-set-selections" for non-interactive install
-			'dirmngr'		# GNU key management required for some APT installs via additional repos
-			'ethtool'		# Force Ethernet link speed
-			'fake-hwclock'		# Hardware clock emulation, to allow correct timestamps during boot before network time sync
-			'gnupg'			# apt-key add
-			'htop'			# System monitor
-			'ifupdown'		# Network interface configuration
-			'iputils-ping'		# "ping" command
-			'isc-dhcp-client'	# DHCP client
-			'kmod'			# "modprobe", "lsmod", used by several DietPi scripts
-			'locales'		# Support locales, necessary for DietPi scripts, as we use C.UTF-8 as default
-			'nano'			# Simple text editor
-			'p7zip'			# .7z wrapper
-			'parted'		# partprobe + drive partitioning, required by DietPi-Drive_Manager
-			'procps'		# "kill", "ps", "pgrep", "sysctl", used by several DietPi scripts
-			'psmisc'		# "killall", used by several DietPi scripts
-			'sudo'			# Root permission wrapper for users within /etc/sudoers(.d/)
-			'systemd-sysv'		# Includes systemd and additional commands: "poweroff", "shutdown" etc.
-			'tzdata'		# Time zone data for system clock, auto summer/winter time adjustment
-			'udev'			# /dev/ and hotplug management daemon
-			'unzip'			# .zip unpacker
-			'usbutils'		# "lsusb", used by DietPi-Software + DietPi-Bugreport
-			'wget'			# Download tool
-			'whiptail'		# DietPi dialogs
+			'apt-utils'       # Allows "debconf" to pre-configure APT packages for non-interactive install
+			'bash-completion' # Auto completes a wide list of bash commands and options via <tab>
+			'bc'              # Bash calculator, e.g. for floating point calculation
+			'bzip2'           # (.tar).bz2 wrapper
+			'ca-certificates' # Adds known ca-certificates, necessary to practically access HTTPS sources
+			'console-setup'   # DietPi-Config keyboard configuration + console fonts
+			'cron'            # Background job scheduler
+			'curl'            # Web address testing, downloading, uploading etc.
+			'debconf'         # APT package pre-configuration, e.g. "debconf-set-selections" for non-interactive install
+			'dirmngr'         # GNU key management required for some APT installs via additional repos
+			'ethtool'         # Force Ethernet link speed
+			'fake-hwclock'    # Hardware clock emulation, to allow correct timestamps during boot before network time sync
+			'gnupg'           # apt-key add
+			'htop'            # System monitor
+			'ifupdown'        # Network interface configuration
+			'iputils-ping'    # "ping" command
+			'isc-dhcp-client' # DHCP client
+			'kmod'            # "modprobe", "lsmod", used by several DietPi scripts
+			'locales'         # Support locales, necessary for DietPi scripts, as we use C.UTF-8 as default
+			'nano'            # Simple text editor
+			'p7zip'           # .7z wrapper
+			'parted'          # partprobe + drive partitioning, required by DietPi-Drive_Manager
+			'procps'          # "kill", "ps", "pgrep", "sysctl", used by several DietPi scripts
+			'psmisc'          # "killall", used by several DietPi scripts
+			'sudo'            # Root permission wrapper for users within /etc/sudoers(.d/)
+			'systemd-sysv'    # Includes systemd and additional commands: "poweroff", "shutdown" etc.
+			'tzdata'          # Time zone data for system clock, auto summer/winter time adjustment
+			'udev'            # /dev/ and hotplug management daemon
+			'unzip'           # .zip unpacker
+			'usbutils'        # "lsusb", used by DietPi-Software + DietPi-Bugreport
+			'wget'            # Download tool
+			'whiptail'        # DietPi dialogs
 			#'xz-utils'		# (.tar).xz wrapper
 
 		)
@@ -738,32 +739,32 @@ _EOF_'
 		#   On Buster-, "dropbear" pulls in "dropbear-initramfs", which we don't need: https://packages.debian.org/dropbear
 		# - apt-transport-https: Allows HTTPS sources for ATP
 		#   On Buster+, it is included in "apt" package: https://packages.debian.org/apt-transport-https
-		if (( $G_DISTRO > 5 )); then
+		if (($G_DISTRO > 5)); then
 
 			aPACKAGES_REQUIRED_INSTALL+=('dropbear')
 
 		else
 
 			aPACKAGES_REQUIRED_INSTALL+=('dropbear-run')
-			(( $G_DISTRO < 5 )) && aPACKAGES_REQUIRED_INSTALL+=('apt-transport-https')
+			(($G_DISTRO < 5)) && aPACKAGES_REQUIRED_INSTALL+=('apt-transport-https')
 
 		fi
 		# - systemd-timesyncd: Network time sync daemon
 		#   Available as dedicated package since Bullseye: https://packages.debian.org/systemd-timesyncd
 		#   While the above needs to be checked against current distro to not break SSH or APT before distro upgrade, this one should be checked against target distro version.
-		(( $DISTRO_TARGET > 5 )) && aPACKAGES_REQUIRED_INSTALL+=('systemd-timesyncd')
+		(($DISTRO_TARGET > 5)) && aPACKAGES_REQUIRED_INSTALL+=('systemd-timesyncd')
 
 		# - fdisk: Partitioning tool used by DietPi-FS_partition_resize and DietPi-Imager
 		#   This has become an own package since Debian Buster: https://packages.debian.org/fdisk
-		(( $DISTRO_TARGET > 4 )) && aPACKAGES_REQUIRED_INSTALL+=('fdisk')
+		(($DISTRO_TARGET > 4)) && aPACKAGES_REQUIRED_INSTALL+=('fdisk')
 
 		# G_HW_MODEL specific
 		# - initramfs: Required for generic bootloader, but not required/used by RPi bootloader, on VM install tiny-initramfs with limited features but sufficient and much smaller + faster
-		if (( $G_HW_MODEL == 20 )); then
+		if (($G_HW_MODEL == 20)); then
 
 			aPACKAGES_REQUIRED_INSTALL+=('tiny-initramfs')
 
-		elif (( $G_HW_MODEL > 9 )); then
+		elif (($G_HW_MODEL > 9)); then
 
 			aPACKAGES_REQUIRED_INSTALL+=('initramfs-tools')
 
@@ -773,7 +774,7 @@ _EOF_'
 
 			aPACKAGES_REQUIRED_INSTALL+=('rng-tools5')
 
-		elif (( $G_HW_MODEL > 9 )); then
+		elif (($G_HW_MODEL > 9)); then
 
 			aPACKAGES_REQUIRED_INSTALL+=('haveged')
 
@@ -784,18 +785,18 @@ _EOF_'
 		fi
 
 		# WiFi related
-		if (( $WIFI_REQUIRED )); then
+		if (($WIFI_REQUIRED)); then
 
-			aPACKAGES_REQUIRED_INSTALL+=('iw')			# Tools to configure WiFi adapters
-			aPACKAGES_REQUIRED_INSTALL+=('wireless-tools')		# Same as "iw", deprecated but still required for non-nl80211 adapters
-			aPACKAGES_REQUIRED_INSTALL+=('crda')			# Set WiFi frequencies according to local regulations, based on WiFi country code
-			aPACKAGES_REQUIRED_INSTALL+=('rfkill')	 		# Block/unblock wireless adapters, including WiFi and Bluetooth
-			aPACKAGES_REQUIRED_INSTALL+=('wpasupplicant')		# Support for WPA-protected WiFi network connection
+			aPACKAGES_REQUIRED_INSTALL+=('iw')             # Tools to configure WiFi adapters
+			aPACKAGES_REQUIRED_INSTALL+=('wireless-tools') # Same as "iw", deprecated but still required for non-nl80211 adapters
+			aPACKAGES_REQUIRED_INSTALL+=('crda')           # Set WiFi frequencies according to local regulations, based on WiFi country code
+			aPACKAGES_REQUIRED_INSTALL+=('rfkill')         # Block/unblock wireless adapters, including WiFi and Bluetooth
+			aPACKAGES_REQUIRED_INSTALL+=('wpasupplicant')  # Support for WPA-protected WiFi network connection
 
 		fi
 
 		# G_HW_MODEL specific
-		(( $G_HW_MODEL == 20 )) || aPACKAGES_REQUIRED_INSTALL+=('hdparm') # Drive power management adjustments
+		(($G_HW_MODEL == 20)) || aPACKAGES_REQUIRED_INSTALL+=('hdparm') # Drive power management adjustments
 
 		# Install gdisk if root file system is on a GPT partition, used by DietPi-FS_partition_resize
 		[[ $(parted -s "$(lsblk -npo PKNAME "$(findmnt -no SOURCE /)")" print) == *'Partition Table: gpt'* ]] && aPACKAGES_REQUIRED_INSTALL+=('gdisk')
@@ -803,26 +804,26 @@ _EOF_'
 		# Install required filesystem packages
 		if [[ $(blkid -s TYPE -o value) =~ (^|[[:space:]]|v)'fat' ]]; then
 
-			aPACKAGES_REQUIRED_INSTALL+=('dosfstools')		# DietPi-Drive_Manager + fat (boot) drive file system check and creation tools
+			aPACKAGES_REQUIRED_INSTALL+=('dosfstools') # DietPi-Drive_Manager + fat (boot) drive file system check and creation tools
 
 		fi
 
 		# Kernel/bootloader/firmware
 		# - We need to install those directly to allow G_AGA() autoremove possible older packages later: https://github.com/MichaIng/DietPi/issues/1285#issuecomment-354602594
 		# - Jessie workaround: https://github.com/MichaIng/DietPi/issues/3462
-		(( $G_DISTRO < 4 )) && G_EXEC_PRE_FUNC(){ acommand[2]='--force-yes'; }
+		(($G_DISTRO < 4)) && G_EXEC_PRE_FUNC() { acommand[2]='--force-yes'; }
 		# - G_HW_ARCH specific
 		#	x86_64
-		if (( $G_HW_ARCH == 10 )); then
+		if (($G_HW_ARCH == 10)); then
 
 			local packages='linux-image-amd64 os-prober'
 
 			# Grub EFI
-			if dpkg-query -s 'grub-efi-amd64' &> /dev/null || [[ -d '/boot/efi' ]]; then
+			if dpkg-query -s 'grub-efi-amd64' &>/dev/null || [[ -d '/boot/efi' ]]; then
 
 				packages+=' grub-efi-amd64'
 				# On Buster+ enable secure boot compatibility: https://packages.debian.org/buster/grub-efi-amd64-signed
-				(( $DISTRO_TARGET > 4 )) && packages+=' grub-efi-amd64-signed shim-signed'
+				(($DISTRO_TARGET > 4)) && packages+=' grub-efi-amd64-signed shim-signed'
 
 			# Grub BIOS
 			else
@@ -849,53 +850,51 @@ _EOF_'
 
 			)
 
-			for i in "${apackages[@]}"
-			do
+			for i in "${apackages[@]}"; do
 
-				while read -r line
-				do
+				while read -r line; do
 
 					aPACKAGES_REQUIRED_INSTALL+=("$line")
 					G_DIETPI-NOTIFY 2 "ARMbian package detected and added: $line"
 
-				done <<< "$(dpkg --get-selections | mawk -v pat="^$i" '$0~pat {print $1}')"
+				done <<<"$(dpkg --get-selections | mawk -v pat="^$i" '$0~pat {print $1}')"
 
 			done
 
 			unset apackages
 
 		#	RPi
-		elif (( $G_HW_MODEL < 10 )); then
+		elif (($G_HW_MODEL < 10)); then
 
 			G_AGI libraspberrypi-bin libraspberrypi0 raspberrypi-bootloader raspberrypi-kernel raspberrypi-sys-mods raspi-copies-and-fills
 
 		#	Odroid C4
-		elif (( $G_HW_MODEL == 16 )); then
+		elif (($G_HW_MODEL == 16)); then
 
 			G_AGI linux-image-arm64-odroid-c4 meveric-keyring
 
 		#	Odroid N2
-		elif (( $G_HW_MODEL == 15 )); then
+		elif (($G_HW_MODEL == 15)); then
 
 			G_AGI linux-image-arm64-odroid-n2 meveric-keyring
 
 		#	Odroid N1
-		elif (( $G_HW_MODEL == 14 )); then
+		elif (($G_HW_MODEL == 14)); then
 
 			G_AGI linux-image-arm64-odroid-n1 meveric-keyring
 
 		#	Odroid C2
-		elif (( $G_HW_MODEL == 12 )); then
+		elif (($G_HW_MODEL == 12)); then
 
 			G_AGI linux-image-arm64-odroid-c2 meveric-keyring
 
 		#	Odroid XU3/4/HC1/HC2
-		elif (( $G_HW_MODEL == 11 )); then
+		elif (($G_HW_MODEL == 11)); then
 
 			G_AGI linux-image-4.14-armhf-odroid-xu4 meveric-keyring
 
 		#	ROCK Pi S (official Radxa Debian image)
-		elif (( $G_HW_MODEL == 73 )) && grep -q 'apt\.radxa\.com' /etc/apt/sources.list.d/*.list; then
+		elif (($G_HW_MODEL == 73)) && grep -q 'apt\.radxa\.com' /etc/apt/sources.list.d/*.list; then
 
 			G_AGI rockpis-rk-u-boot-latest linux-4.4-rockpis-latest rockchip-overlay
 
@@ -926,31 +925,31 @@ _EOF_'
 		else
 
 			#	Usually no firmware should be necessary for VMs. If user manually passes though some USB device, user might need to install the firmware then.
-			if (( $G_HW_MODEL != 20 )); then
+			if (($G_HW_MODEL != 20)); then
 
-				aPACKAGES_REQUIRED_INSTALL+=('firmware-realtek')		# Realtek Eth+WiFi+BT dongle firmware
-				if (( $G_HW_ARCH == 10 )); then
+				aPACKAGES_REQUIRED_INSTALL+=('firmware-realtek') # Realtek Eth+WiFi+BT dongle firmware
+				if (($G_HW_ARCH == 10)); then
 
-					aPACKAGES_REQUIRED_INSTALL+=('firmware-linux')		# Misc free+nonfree firmware
+					aPACKAGES_REQUIRED_INSTALL+=('firmware-linux') # Misc free+nonfree firmware
 
 				else
 
-					aPACKAGES_REQUIRED_INSTALL+=('firmware-linux-free')	# Misc free firmware
-					aPACKAGES_REQUIRED_INSTALL+=('firmware-misc-nonfree')	# Misc nonfree firmware + Ralink WiFi
+					aPACKAGES_REQUIRED_INSTALL+=('firmware-linux-free')   # Misc free firmware
+					aPACKAGES_REQUIRED_INSTALL+=('firmware-misc-nonfree') # Misc nonfree firmware + Ralink WiFi
 
 				fi
 
 			fi
 
-			if (( $WIFI_REQUIRED )); then
+			if (($WIFI_REQUIRED)); then
 
-				aPACKAGES_REQUIRED_INSTALL+=('firmware-atheros')		# Qualcomm/Atheros WiFi+BT dongle firmware
-				aPACKAGES_REQUIRED_INSTALL+=('firmware-brcm80211')		# Breadcom WiFi dongle firmware
-				aPACKAGES_REQUIRED_INSTALL+=('firmware-iwlwifi')		# Intel WiFi dongle+PCIe firmware
-				if (( $G_HW_MODEL == 20 )); then
+				aPACKAGES_REQUIRED_INSTALL+=('firmware-atheros')   # Qualcomm/Atheros WiFi+BT dongle firmware
+				aPACKAGES_REQUIRED_INSTALL+=('firmware-brcm80211') # Breadcom WiFi dongle firmware
+				aPACKAGES_REQUIRED_INSTALL+=('firmware-iwlwifi')   # Intel WiFi dongle+PCIe firmware
+				if (($G_HW_MODEL == 20)); then
 
-					aPACKAGES_REQUIRED_INSTALL+=('firmware-realtek')	# Realtek Eth+WiFi+BT dongle firmware
-					aPACKAGES_REQUIRED_INSTALL+=('firmware-misc-nonfree')	# Misc nonfree firmware + Ralink WiFi
+					aPACKAGES_REQUIRED_INSTALL+=('firmware-realtek')      # Realtek Eth+WiFi+BT dongle firmware
+					aPACKAGES_REQUIRED_INSTALL+=('firmware-misc-nonfree') # Misc nonfree firmware + Ralink WiFi
 
 				fi
 
@@ -960,7 +959,7 @@ _EOF_'
 
 		G_DIETPI-NOTIFY 2 'Generating list of minimal packages, required for DietPi installation'
 
-		local packages=$(dpkg --get-selections ${aPACKAGES_REQUIRED_INSTALL[@]} 2> /dev/null | mawk '{print $1}')
+		local packages=$(dpkg --get-selections ${aPACKAGES_REQUIRED_INSTALL[@]} 2>/dev/null | mawk '{print $1}')
 		[[ $packages ]] && G_EXEC_DESC='Marking required packages as manually installed' G_EXEC apt-mark manual $packages
 
 		# Purging additional packages, that (in some cases) do not get autoremoved:
@@ -970,7 +969,7 @@ _EOF_'
 		# - mountall: https://github.com/MichaIng/DietPi/issues/2613
 		# - initscripts: Pre-installed on Jessie systems (?), superseded and masked by systemd, but never autoremoved
 		#	Jessie workaround: https://github.com/MichaIng/DietPi/issues/3462
-		(( $G_DISTRO < 4 )) && G_EXEC_PRE_FUNC(){ acommand[2]='--force-yes'; }
+		(($G_DISTRO < 4)) && G_EXEC_PRE_FUNC() { acommand[2]='--force-yes'; }
 		G_AGP dbus dhcpcd5 mountall initscripts '*office*' '*xfce*' '*qt5*' '*xserver*' '*xorg*' glib-networking libgtk-3-0
 		# Remove any autoremove prevention
 		rm -f /etc/apt/apt.conf.d/01autoremove*
@@ -979,12 +978,13 @@ _EOF_'
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: APT installations"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: APT installations"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
 		# - Jessie workaround: https://github.com/MichaIng/DietPi/issues/3462
-		(( $G_DISTRO < 4 )) && G_EXEC_PRE_FUNC(){ acommand[2]='--force-yes'; }
+		(($G_DISTRO < 4)) && G_EXEC_PRE_FUNC() { acommand[2]='--force-yes'; }
 		G_AGDUG
 
 		# Distro is now target (for APT purposes and G_AGX support due to installed binary, its here, instead of after G_AGUP)
@@ -1002,28 +1002,29 @@ _EOF_'
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Prep system for DietPi ENV"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Prep system for DietPi ENV"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
 		G_DIETPI-NOTIFY 2 'Deleting list of known users and groups, not required by DietPi'
 
-		getent passwd pi &> /dev/null && userdel -f pi
-		getent passwd test &> /dev/null && userdel -f test # @fourdee
-		getent passwd odroid &> /dev/null && userdel -f odroid
-		getent passwd rock64 &> /dev/null && userdel -f rock64
-		getent passwd rock &> /dev/null && userdel -f rock # Radxa images
-		getent passwd linaro &> /dev/null && userdel -f linaro # ASUS TB
-		getent passwd dietpi &> /dev/null && userdel -f dietpi # recreated below
-		getent passwd debian &> /dev/null && userdel -f debian # BBB
-		getent passwd openmediavault-webgui &> /dev/null && userdel -f openmediavault-webgui # OMV (NanoPi NEO2)
-		getent passwd admin &> /dev/null && userdel -f admin # OMV (NanoPi NEO2)
-		getent passwd fa &> /dev/null && userdel -f fa # OMV (NanoPi NEO2)
-		getent passwd colord &> /dev/null && userdel -f colord # OMV (NanoPi NEO2)
-		getent passwd saned &> /dev/null && userdel -f saned # OMV (NanoPi NEO2)
-		getent group openmediavault-config &> /dev/null && groupdel openmediavault-config # OMV (NanoPi NEO2)
-		getent group openmediavault-engined &> /dev/null && groupdel openmediavault-engined # OMV (NanoPi NEO2)
-		getent group openmediavault-webgui &> /dev/null && groupdel openmediavault-webgui # OMV (NanoPi NEO2)
+		getent passwd pi &>/dev/null && userdel -f pi
+		getent passwd test &>/dev/null && userdel -f test # @fourdee
+		getent passwd odroid &>/dev/null && userdel -f odroid
+		getent passwd rock64 &>/dev/null && userdel -f rock64
+		getent passwd rock &>/dev/null && userdel -f rock                                   # Radxa images
+		getent passwd linaro &>/dev/null && userdel -f linaro                               # ASUS TB
+		getent passwd dietpi &>/dev/null && userdel -f dietpi                               # recreated below
+		getent passwd debian &>/dev/null && userdel -f debian                               # BBB
+		getent passwd openmediavault-webgui &>/dev/null && userdel -f openmediavault-webgui # OMV (NanoPi NEO2)
+		getent passwd admin &>/dev/null && userdel -f admin                                 # OMV (NanoPi NEO2)
+		getent passwd fa &>/dev/null && userdel -f fa                                       # OMV (NanoPi NEO2)
+		getent passwd colord &>/dev/null && userdel -f colord                               # OMV (NanoPi NEO2)
+		getent passwd saned &>/dev/null && userdel -f saned                                 # OMV (NanoPi NEO2)
+		getent group openmediavault-config &>/dev/null && groupdel openmediavault-config    # OMV (NanoPi NEO2)
+		getent group openmediavault-engined &>/dev/null && groupdel openmediavault-engined  # OMV (NanoPi NEO2)
+		getent group openmediavault-webgui &>/dev/null && groupdel openmediavault-webgui    # OMV (NanoPi NEO2)
 
 		G_DIETPI-NOTIFY 2 'Removing misc files/folders/services, not required by DietPi'
 
@@ -1071,17 +1072,15 @@ _EOF_'
 
 		)
 
-		for i in ${aservices[@]}
-		do
+		for i in ${aservices[@]}; do
 
 			# Loop through known service locations
-			for j in /etc/init.d/$i /{etc,lib,usr/lib}/systemd/system/$i.service{,.d}
-			do
+			for j in /etc/init.d/$i /{etc,lib,usr/lib}/systemd/system/$i.service{,.d}; do
 
 				[[ -e $j ]] || continue
 				[[ -f $j ]] && systemctl disable --now ${j##*/}
 				# Remove if not attached to any APT package, else mask
-				if dpkg -S $j &> /dev/null; then
+				if dpkg -S $j &>/dev/null; then
 
 					systemctl mask ${j##*/}
 
@@ -1112,8 +1111,7 @@ _EOF_'
 
 		)
 
-		for i in ${aservices[@]}
-		do
+		for i in ${aservices[@]}; do
 
 			G_EXEC update-rc.d -f $i remove
 
@@ -1123,9 +1121,9 @@ _EOF_'
 		[[ -f '/boot/armbian_first_run.txt.template' ]] && rm -v /boot/armbian_first_run.txt.template
 		[[ -f '/usr/bin/armbianmonitor' ]] && rm -v /usr/bin/armbianmonitor
 		[[ -d '/etc/armbianmonitor' ]] && rm -Rv /etc/armbianmonitor
-		[[ -d '/var/lib/apt-xapian-index' ]] && rm  -Rv /var/lib/apt-xapian-index
+		[[ -d '/var/lib/apt-xapian-index' ]] && rm -Rv /var/lib/apt-xapian-index
 		[[ -f '/usr/local/sbin/log2ram' ]] && rm -v /usr/local/sbin/log2ram
-		umount /var/log.hdd 2> /dev/null
+		umount /var/log.hdd 2>/dev/null
 		[[ -d '/var/log.hdd' ]] && rm -R /var/log.hdd
 		[[ -f '/root/.not_logged_in_yet' ]] && rm -v /root/.not_logged_in_yet
 		[[ -f '/root/.desktop_autologin' ]] && rm -v /root/.desktop_autologin
@@ -1141,7 +1139,7 @@ _EOF_'
 		#[[ -d '/usr/lib/armbian' ]] && rm -vR /usr/lib/armbian # Required for ARMbian root package upgrade
 		#[[ -d '/usr/share/armbian' ]] && rm -vR /usr/share/armbian # Required for ARMbian root package upgrade
 		# Place DPKG exclude file, especially to skip cron jobs, which are doomed to fail and an unnecessary overhead + syslog spam on DietPi
-		[[ -f '/etc/armbian-release' ]] && cat << _EOF_ > /etc/dpkg/dpkg.cfg.d/dietpi-no_armbian
+		[[ -f '/etc/armbian-release' ]] && cat <<_EOF_ >/etc/dpkg/dpkg.cfg.d/dietpi-no_armbian
 # Exclude conflicting ARMbian files
 path-exclude /lib/systemd/system/*armbian*
 path-exclude /etc/systemd/system/logrotate.service
@@ -1173,7 +1171,7 @@ _EOF_
 		#	WIP: Mask rc-local.service and create symlink postboot.d/rc.local => /etc/rc.local for backwards compatibility?
 		[[ -f '/etc/rc.local' ]] && rm -v /etc/rc.local # https://github.com/RPi-Distro/pi-gen/blob/master/stage2/01-sys-tweaks/files/rc.local
 		#	Below required if DietPi-PREP is executed from chroot/container, so RPi firstrun scripts are not executed
-		[[ -f '/etc/init.d/resize2fs_once' ]] && rm -v /etc/init.d/resize2fs_once # https://github.com/RPi-Distro/pi-gen/blob/master/stage2/01-sys-tweaks/files/resize2fs_once
+		[[ -f '/etc/init.d/resize2fs_once' ]] && rm -v /etc/init.d/resize2fs_once                                  # https://github.com/RPi-Distro/pi-gen/blob/master/stage2/01-sys-tweaks/files/resize2fs_once
 		[[ -f '/boot/cmdline.txt' ]] && sed -i 's| init=/usr/lib/raspi-config/init_resize\.sh||' /boot/cmdline.txt # https://github.com/RPi-Distro/pi-gen/blob/master/stage2/01-sys-tweaks/00-patches/07-resize-init.diff
 
 		# - make_nas_processes_faster cron job on Rock64 + NanoPi + Pine64(?) images
@@ -1200,7 +1198,7 @@ _EOF_
 
 		# - Enable /etc/bashrc.d/ support for custom interactive non-login shell scripts:
 		sed -i '\#/etc/bashrc\.d/#d' /etc/bash.bashrc
-		echo 'for i in /etc/bashrc.d/*.sh /etc/bashrc.d/*.bash; do [ -r "$i" ] && . $i; done; unset i' >> /etc/bash.bashrc
+		echo 'for i in /etc/bashrc.d/*.sh /etc/bashrc.d/*.bash; do [ -r "$i" ] && . $i; done; unset i' >>/etc/bash.bashrc
 
 		# - Enable bash-completion for non-login shells:
 		#	- NB: It is called twice on login shells then, but breaks directly if called already once.
@@ -1272,16 +1270,16 @@ _EOF_'
 
 		G_DIETPI-NOTIFY 2 'Resetting and adding dietpi.com SSH pub host key for DietPi-Survey/Bugreport uploads:'
 		mkdir -pv /root/.ssh
-		echo 'ssh.dietpi.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDE6aw3r6aOEqendNu376iiCHr9tGBIWPgfrLkzjXjEsHGyVSUFNnZt6pftrDeK7UX+qX4FxOwQlugG4fymOHbimRCFiv6cf7VpYg1Ednquq9TLb7/cIIbX8a6AuRmX4fjdGuqwmBq3OG7ZksFcYEFKt5U4mAJIaL8hXiM2iXjgY02LqiQY/QWATsHI4ie9ZOnwrQE+Rr6mASN1BVFuIgyHIbwX54jsFSnZ/7CdBMkuAd9B8JkxppWVYpYIFHE9oWNfjh/epdK8yv9Oo6r0w5Rb+4qaAc5g+RAaknHeV6Gp75d2lxBdCm5XknKKbGma2+/DfoE8WZTSgzXrYcRlStYN' > /root/.ssh/known_hosts
+		echo 'ssh.dietpi.com ssh-rsa AAAAB3NzaC1yc2EAAAADAQABAAABAQDE6aw3r6aOEqendNu376iiCHr9tGBIWPgfrLkzjXjEsHGyVSUFNnZt6pftrDeK7UX+qX4FxOwQlugG4fymOHbimRCFiv6cf7VpYg1Ednquq9TLb7/cIIbX8a6AuRmX4fjdGuqwmBq3OG7ZksFcYEFKt5U4mAJIaL8hXiM2iXjgY02LqiQY/QWATsHI4ie9ZOnwrQE+Rr6mASN1BVFuIgyHIbwX54jsFSnZ/7CdBMkuAd9B8JkxppWVYpYIFHE9oWNfjh/epdK8yv9Oo6r0w5Rb+4qaAc5g+RAaknHeV6Gp75d2lxBdCm5XknKKbGma2+/DfoE8WZTSgzXrYcRlStYN' >/root/.ssh/known_hosts
 
 		G_DIETPI-NOTIFY 2 'Configuring DNS nameserver:'
 		# Failsafe: Assure that /etc/resolv.conf is not a symlink and disable systemd-resolved
 		systemctl disable --now systemd-resolved
 		rm -fv /etc/resolv.conf
-		echo 'nameserver 9.9.9.9' > /etc/resolv.conf # Apply generic functional DNS nameserver, updated on next service start
+		echo 'nameserver 9.9.9.9' >/etc/resolv.conf # Apply generic functional DNS nameserver, updated on next service start
 
 		# ifupdown starts the daemon outside of systemd, the enabled systemd unit just thows an error on boot due to missing dbus and with dbus might interfere with ifupdown
-		systemctl disable wpa_supplicant 2> /dev/null && G_DIETPI-NOTIFY 2 'Disabled non-required wpa_supplicant systemd unit'
+		systemctl disable wpa_supplicant 2>/dev/null && G_DIETPI-NOTIFY 2 'Disabled non-required wpa_supplicant systemd unit'
 
 		[[ -L '/etc/network/interfaces' ]] && rm -v /etc/network/interfaces # ARMbian symlink for bulky network-manager
 		G_EXEC_DESC='Configuring network interfaces'
@@ -1318,19 +1316,18 @@ _EOF_'
 		#-----------------------------------------------------------------------------------
 		# MISC
 		G_DIETPI-NOTIFY 2 'Disabling apt-daily services to prevent random APT cache lock'
-		for i in apt-daily{,-upgrade}.{service,timer}
-		do
+		for i in apt-daily{,-upgrade}.{service,timer}; do
 
-			systemctl disable --now $i 2> /dev/null
-			systemctl mask $i 2> /dev/null
+			systemctl disable --now $i 2>/dev/null
+			systemctl mask $i 2>/dev/null
 
 		done
 
 		G_DIETPI-NOTIFY 2 'Disabling e2scrub services which are for LVM and require lvm2/lvcreate being installed'
-		systemctl disable --now e2scrub_all.timer 2> /dev/null
-		systemctl disable --now e2scrub_reap 2> /dev/null
+		systemctl disable --now e2scrub_all.timer 2>/dev/null
+		systemctl disable --now e2scrub_reap 2>/dev/null
 
-		(( $G_HW_MODEL > 9 )) && echo $G_HW_MODEL > /etc/.dietpi_hw_model_identifier
+		(($G_HW_MODEL > 9)) && echo $G_HW_MODEL >/etc/.dietpi_hw_model_identifier
 		G_EXEC_DESC='Generating /boot/dietpi/.hw_model' G_EXEC /boot/dietpi/func/dietpi-obtain_hw_model
 
 		G_EXEC_DESC='Generating /etc/fstab' G_EXEC /boot/dietpi/dietpi-drive_manager 4
@@ -1340,20 +1337,20 @@ _EOF_'
 		cd /tmp/$G_PROGRAM_NAME
 
 		local info_use_drive_manager='Can be installed and setup by DietPi-Drive_Manager.\nSimply run "dietpi-drive_manager" and select "Add network drive".'
-		echo -e "Samba client: $info_use_drive_manager" > /mnt/samba/readme.txt
-		echo -e "NFS client: $info_use_drive_manager" > /mnt/nfs_client/readme.txt
+		echo -e "Samba client: $info_use_drive_manager" >/mnt/samba/readme.txt
+		echo -e "NFS client: $info_use_drive_manager" >/mnt/nfs_client/readme.txt
 
 		G_DIETPI-NOTIFY 2 'Restoring original MOTD:'
 		rm -fv /etc/motd
 		cp -v /usr/share/base-files/motd /etc/motd
 
 		# Add pre-up lines for WiFi on OrangePi Zero
-		if (( $G_HW_MODEL == 32 )); then
+		if (($G_HW_MODEL == 32)); then
 
 			sed -i '/iface wlan0 inet dhcp/apre-up modprobe xradio_wlan\npre-up iwconfig wlan0 power on' /etc/network/interfaces
 
 		# ASUS TB WiFi: https://github.com/MichaIng/DietPi/issues/1760
-		elif (( $G_HW_MODEL == 52 )); then
+		elif (($G_HW_MODEL == 52)); then
 
 			G_CONFIG_INJECT '8723bs' '8723bs' /etc/modules
 
@@ -1366,7 +1363,7 @@ _EOF_'
 		G_CONFIG_INJECT 'timeout[[:blank:]]' 'timeout 10;' /etc/dhcp/dhclient.conf
 		G_CONFIG_INJECT 'retry[[:blank:]]' 'retry 4;' /etc/dhcp/dhclient.conf
 
-		echo 'DietPi' > /etc/hostname
+		echo 'DietPi' >/etc/hostname
 		G_EXEC_DESC='Configuring hostname and hosts'
 		G_EXEC eval 'cat << _EOF_ > /etc/hosts
 127.0.0.1 localhost
@@ -1416,7 +1413,7 @@ _EOF_'
 
 		G_DIETPI-NOTIFY 2 'Configuring serial login consoles:'
 		# On virtual machines, serial consoles are not required
-		if (( $G_HW_MODEL == 20 )); then
+		if (($G_HW_MODEL == 20)); then
 
 			/boot/dietpi/func/dietpi-set_hardware serialconsole disable
 
@@ -1424,7 +1421,7 @@ _EOF_'
 
 			/boot/dietpi/func/dietpi-set_hardware serialconsole enable
 			# On RPi the primary serial console depends on model, use "serial0" which links to the primary console, converts to correct device on first boot
-			if (( $G_HW_MODEL < 10 )); then
+			if (($G_HW_MODEL < 10)); then
 
 				/boot/dietpi/func/dietpi-set_hardware serialconsole disable ttyAMA0
 				/boot/dietpi/func/dietpi-set_hardware serialconsole disable ttyS0
@@ -1438,7 +1435,7 @@ _EOF_'
 		systemctl mask getty-static
 		# - logind features disabled by default. Usually not needed and all features besides auto getty creation are not available without libpam-systemd package.
 		#	- It will be unmasked/enabled, automatically if libpam-systemd got installed during dietpi-software install, usually with desktops.
-		systemctl disable --now systemd-logind 2> /dev/null
+		systemctl disable --now systemd-logind 2>/dev/null
 		systemctl mask systemd-logind
 
 		G_DIETPI-NOTIFY 2 'Configuring regional settings (TZdata):'
@@ -1453,13 +1450,13 @@ _EOF_'
 
 		# G_HW_ARCH specific
 		G_DIETPI-NOTIFY 2 'Applying G_HW_ARCH specific tweaks:'
-		if (( $G_HW_ARCH == 10 )); then
+		if (($G_HW_ARCH == 10)); then
 
 			G_EXEC_DESC='Removing foreign i386 DPKG architecture' G_EXEC dpkg --remove-architecture i386
 
 			# Disable nouveau: https://github.com/MichaIng/DietPi/issues/1244 // https://dietpi.com/phpbb/viewtopic.php?p=9688#p9688
 			rm -f /etc/modprobe.d/*nouveau*
-			cat << _EOF_ > /etc/modprobe.d/dietpi-disable_nouveau.conf
+			cat <<_EOF_ >/etc/modprobe.d/dietpi-disable_nouveau.conf
 blacklist nouveau
 blacklist lbm-nouveau
 options nouveau modeset=0
@@ -1468,10 +1465,10 @@ alias lbm-nouveau off
 _EOF_
 
 			# Apply usb-storage quirks to disable UAS for unsupported drives (Seagate ST5000LM000-2AN170): https://github.com/MichaIng/DietPi/issues/2905
-			echo 'options usb-storage quirks=0bc2:ab30:u' > /etc/modprobe.d/dietpi-usb-storage_quirks.conf
+			echo 'options usb-storage quirks=0bc2:ab30:u' >/etc/modprobe.d/dietpi-usb-storage_quirks.conf
 
 			# Update initramfs with above changes
-			if command -v update-tirfs &> /dev/null; then
+			if command -v update-tirfs &>/dev/null; then
 
 				update-tirfs
 
@@ -1481,7 +1478,7 @@ _EOF_
 
 			fi
 
-		elif (( $G_HW_ARCH == 3 )); then
+		elif (($G_HW_ARCH == 3)); then
 
 			G_EXEC_DESC='Removing foreign armhf DPKG architecture' G_EXEC dpkg --remove-architecture armhf
 
@@ -1489,12 +1486,12 @@ _EOF_
 
 		# G_HW_MODEL specific
 		G_DIETPI-NOTIFY 2 'Applying G_HW_MODEL specific tweaks:'
-		if (( $G_HW_MODEL != 20 )); then
+		if (($G_HW_MODEL != 20)); then
 
 			G_EXEC_DESC='Configuring hdparm'
 			# Since Debian Bullseye, spindown_time is not applied if APM is not supported by the drive. force_spindown_time is required to override that.
 			local spindown='spindown_time'
-			(( $G_DISTRO > 5 )) && spindown='force_spindown_time'
+			(($G_DISTRO > 5)) && spindown='force_spindown_time'
 			G_EXEC eval 'cat << _EOF_ > /etc/hdparm.conf
 apm = 127
 $spindown = 120
@@ -1504,12 +1501,12 @@ _EOF_'
 		fi
 
 		# - ARMbian OPi Zero 2: https://github.com/MichaIng/DietPi/issues/876#issuecomment-294350580
-		if (( $G_HW_MODEL == 35 )); then
+		if (($G_HW_MODEL == 35)); then
 
-			echo 'blacklist bmp085' > /etc/modprobe.d/dietpi-disable_bmp085.conf
+			echo 'blacklist bmp085' >/etc/modprobe.d/dietpi-disable_bmp085.conf
 
 		# - Sparky SBC
-		elif (( $G_HW_MODEL == 70 )); then
+		elif (($G_HW_MODEL == 70)); then
 
 			# Install latest kernel/drivers
 			G_EXEC wget https://raw.githubusercontent.com/sparky-sbc/sparky-test/master/dragon_fly_check/uImage -O /boot/uImage
@@ -1522,13 +1519,13 @@ _EOF_'
 			G_EXEC wget https://raw.githubusercontent.com/sparky-sbc/sparky-test/master/sparky-eth/ethernet.ko -O /lib/modules/3.10.38/kernel/drivers/net/ethernet/acts/ethernet.ko
 
 			# Boot args
-			cat << _EOF_ > /boot/uenv.txt
+			cat <<_EOF_ >/boot/uenv.txt
 uenvcmd=setenv os_type linux;
 bootargs=earlyprintk clk_ignore_unused selinux=0 scandelay console=tty0 loglevel=1 real_rootflag=rw root=/dev/mmcblk0p2 rootwait init=/lib/systemd/systemd aotg.urb_fix=1 aotg.aotg1_speed=0 net.ifnames=0
 _EOF_
 
 			# Blacklist GPU and touch screen modules: https://github.com/MichaIng/DietPi/issues/699#issuecomment-271362441
-			cat << _EOF_ > /etc/modprobe.d/dietpi-disable_sparkysbc_touchscreen.conf
+			cat <<_EOF_ >/etc/modprobe.d/dietpi-disable_sparkysbc_touchscreen.conf
 blacklist owl_camera
 blacklist gsensor_stk8313
 blacklist ctp_ft5x06
@@ -1537,7 +1534,7 @@ blacklist gsensor_bma222
 blacklist gsensor_mir3da
 _EOF_
 
-			cat << _EOF_ > /etc/modprobe.d/dietpi-disable_sparkysbc_gpu.conf
+			cat <<_EOF_ >/etc/modprobe.d/dietpi-disable_sparkysbc_gpu.conf
 blacklist pvrsrvkm
 blacklist drm
 blacklist videobuf2_vmalloc
@@ -1548,7 +1545,7 @@ _EOF_
 			G_CONFIG_INJECT 'CONFIG_CPU_GOVERNOR=' 'CONFIG_CPU_GOVERNOR=performance' /boot/dietpi.txt
 
 			# Install script to toggle between USB and onboard Ethernet automatically
-			cat << _EOF_ > /var/lib/dietpi/services/dietpi-sparkysbc_ethernet.sh
+			cat <<_EOF_ >/var/lib/dietpi/services/dietpi-sparkysbc_ethernet.sh
 #!/bin/dash
 # Called from: /etc/systemd/system/dietpi-sparkysbc_ethernet.service
 # We need to wait until USB Ethernet is established on USB bus, which takes much longer than onboard init.
@@ -1568,7 +1565,7 @@ elif ! ip a s eth0 > /dev/null 2>&1; then
 fi
 _EOF_
 			chmod +x /var/lib/dietpi/services/dietpi-sparkysbc_ethernet.sh
-			cat << _EOF_ > /etc/systemd/system/dietpi-sparkysbc_ethernet.service
+			cat <<_EOF_ >/etc/systemd/system/dietpi-sparkysbc_ethernet.service
 [Unit]
 Description=Sparky SBC auto detect and toggle onboard/USB Ethernet
 Wants=network-online.target
@@ -1584,10 +1581,10 @@ _EOF_
 			systemctl enable dietpi-sparkysbc_ethernet
 
 		# - RPi
-		elif (( $G_HW_MODEL < 10 )); then
+		elif (($G_HW_MODEL < 10)); then
 
 			# Scroll lock fix for RPi by Midwan: https://github.com/MichaIng/DietPi/issues/474#issuecomment-243215674
-			cat << _EOF_ > /etc/udev/rules.d/50-leds.rules
+			cat <<_EOF_ >/etc/udev/rules.d/50-leds.rules
 ACTION=="add", SUBSYSTEM=="leds", ENV{DEVPATH}=="*/input*::scrolllock", ATTR{trigger}="kbd-scrollock"
 _EOF_
 
@@ -1595,7 +1592,7 @@ _EOF_
 			/boot/dietpi/func/dietpi-set_hardware rpi-camera disable
 
 			# Update USBridgeSig Ethernet driver via postinst kernel script, until it has been merged into official RPi kernel: https://github.com/allocom/USBridgeSig/tree/master/ethernet
-			cat << _EOF_ > /etc/kernel/postinst.d/dietpi-USBridgeSig
+			cat <<_EOF_ >/etc/kernel/postinst.d/dietpi-USBridgeSig
 #!/bin/bash
 # Only apply to ARMv7+ kernel
 [[ \$1 == *'-v7+' ]] || exit 0
@@ -1612,8 +1609,7 @@ rm -v /tmp/ax88179_178a.ko || exit 0
 _EOF_
 			chmod +x /etc/kernel/postinst.d/dietpi-USBridgeSig
 			# - Update for all installed ARMv7+ kernel versions now
-			for i in /lib/modules/*-v7+
-			do
+			for i in /lib/modules/*-v7+; do
 
 				[[ -d $i ]] || continue
 				i=${i##*/}
@@ -1622,9 +1618,9 @@ _EOF_
 			done
 
 		# - Pine A64 (and possibily others): Cursor fix for FB
-		elif (( $G_HW_MODEL == 40 )); then
+		elif (($G_HW_MODEL == 40)); then
 
-			cat << _EOF_ > /etc/bashrc.d/dietpi-pine64-cursorfix.sh
+			cat <<_EOF_ >/etc/bashrc.d/dietpi-pine64-cursorfix.sh
 #!/bin/dash
 # DietPi: Cursor fix for FB
 infocmp > terminfo.txt
@@ -1652,7 +1648,8 @@ _EOF_
 		#------------------------------------------------------------------------------------------------
 		echo
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
-		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Finalise system for first run of DietPi"; ((SETUP_STEP++))
+		G_DIETPI-NOTIFY 0 "Step $SETUP_STEP: Finalise system for first run of DietPi"
+		((SETUP_STEP++))
 		G_DIETPI-NOTIFY 2 '-----------------------------------------------------------------------------------'
 		#------------------------------------------------------------------------------------------------
 
@@ -1686,7 +1683,7 @@ _EOF_
 		# - Set WiFi
 		local tmp_info='Disabling'
 		local tmp_mode='disable'
-		if (( $WIFI_REQUIRED )); then
+		if (($WIFI_REQUIRED)); then
 
 			G_DIETPI-NOTIFY 2 'Generating default wpa_supplicant.conf'
 			/boot/dietpi/func/dietpi-wifidb 1
@@ -1705,7 +1702,7 @@ _EOF_
 		/boot/dietpi/func/dietpi-set_hardware wifimodules $tmp_mode
 
 		# - x86_64: kernel cmd line with GRUB
-		if (( $G_HW_ARCH == 10 )); then
+		if (($G_HW_ARCH == 10)); then
 
 			G_EXEC_DESC='Detecting additional OS installed on system' G_EXEC os-prober
 			# Purge "os-prober" again
@@ -1713,7 +1710,7 @@ _EOF_
 			G_AGA
 
 			# - Native PC/EFI (assume x86_64 only possible)
-			if [[ -d '/boot/efi' ]] && dpkg-query -s 'grub-efi-amd64' &> /dev/null; then
+			if [[ -d '/boot/efi' ]] && dpkg-query -s 'grub-efi-amd64' &>/dev/null; then
 
 				G_EXEC_DESC='Recreating GRUB-EFI' G_EXEC grub-install --target=x86_64-efi --efi-directory=/boot/efi --bootloader-id=arch_grub --recheck
 
@@ -1741,16 +1738,16 @@ _EOF_
 		rm -v /boot/dietpi/.??*
 
 		G_DIETPI-NOTIFY 2 'Set init .install_stage to -1 (first boot)'
-		echo -1 > /boot/dietpi/.install_stage
+		echo -1 >/boot/dietpi/.install_stage
 
 		G_DIETPI-NOTIFY 2 'Writing PREP information to file'
-		cat << _EOF_ > /boot/dietpi/.prep_info
+		cat <<_EOF_ >/boot/dietpi/.prep_info
 $IMAGE_CREATOR
 $PREIMAGE_INFO
 _EOF_
 
 		G_DIETPI-NOTIFY 2 'Generating GPL license readme'
-		cat << _EOF_ > /var/lib/dietpi/license.txt
+		cat <<_EOF_ >/var/lib/dietpi/license.txt
 -----------------------
 DietPi - GPLv2 License:
 -----------------------
@@ -1769,7 +1766,7 @@ _EOF_
 		/boot/dietpi/func/dietpi-set_software apt-cache clean
 
 		# BBB remove fsexpansion: https://github.com/MichaIng/DietPi/issues/931#issuecomment-345451529
-		if (( $G_HW_MODEL == 71 )); then
+		if (($G_HW_MODEL == 71)); then
 
 			systemctl disable dietpi-fs_partition_resize
 			rm -v /etc/systemd/system/dietpi-fs_partition_resize.service

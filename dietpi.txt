@@ -28,21 +28,21 @@ AUTO_SETUP_NET_WIFI_ENABLED=0
 AUTO_SETUP_NET_ETH_FORCE_SPEED=0
 
 # WiFi country code: 2 uppercase character value (e.g. GB US DE JP): https://en.wikipedia.org/wiki/ISO_3166-1_alpha-2
-AUTO_SETUP_NET_WIFI_COUNTRY_CODE=GB
+AUTO_SETUP_NET_WIFI_COUNTRY_CODE=IN
 
 # Enter your Static Network details below, if applicable.
-AUTO_SETUP_NET_USESTATIC=0
-AUTO_SETUP_NET_STATIC_IP=192.168.0.100
+AUTO_SETUP_NET_USESTATIC=1
+AUTO_SETUP_NET_STATIC_IP=192.168.55.10
 AUTO_SETUP_NET_STATIC_MASK=255.255.255.0
-AUTO_SETUP_NET_STATIC_GATEWAY=192.168.0.1
-AUTO_SETUP_NET_STATIC_DNS=9.9.9.9
+AUTO_SETUP_NET_STATIC_GATEWAY=192.168.55.1
+AUTO_SETUP_NET_STATIC_DNS=8.8.8.8
 
 # Hostname
-AUTO_SETUP_NET_HOSTNAME=DietPi
+AUTO_SETUP_NET_HOSTNAME=master
 
 ##### Misc Options #####
 # Swapfile size to generate: 0=disable | 1=auto (2GB-RAM = size) | 2+=manual (MB)
-AUTO_SETUP_SWAPFILE_SIZE=1
+AUTO_SETUP_SWAPFILE_SIZE=0
 # Swapfile location
 AUTO_SETUP_SWAPFILE_LOCATION=/var/swap
 
@@ -66,19 +66,19 @@ AUTO_SETUP_CUSTOM_SCRIPT_EXEC=0
 
 ##### Software Options #####
 # SSH Server Selection: 0=none/custom | -1=Dropbear | -2=OpenSSH
-AUTO_SETUP_SSH_SERVER_INDEX=-1
+AUTO_SETUP_SSH_SERVER_INDEX=-2
 
 # File Server Selection: 0=none/custom | -1=ProFTP | -2=Samba
-AUTO_SETUP_FILE_SERVER_INDEX=0
+AUTO_SETUP_FILE_SERVER_INDEX=-1
 
 # Logging Mode Selection: 0=none/custom | -1=RAMlog 1h clear | -2=RAMlog 1h save clear | -3=rsyslog + logrotate
-AUTO_SETUP_LOGGING_INDEX=-1
+AUTO_SETUP_LOGGING_INDEX=-2
 # RAMlog max tmpfs size (MB). 50MB should be fine for single use. 200MB+ for heavy webserver and access log etc.
 AUTO_SETUP_RAMLOG_MAXSIZE=50
 
 # Webserver Preference Selection: 0=Apache2 | -1=Nginx | -2=Lighttpd
 # - This will be ignored if you have manually selected any webserver stack.
-AUTO_SETUP_WEB_SERVER_INDEX=-2
+AUTO_SETUP_WEB_SERVER_INDEX=-1
 
 # DietPi-Autostart: 0=Console | 7=Console autologin | 1=Kodi | 2=Desktop autologin | 16=Desktop | 3=RetroPie | 4=OpenTyrian | 5=DietPi-Cloudshell | 6=Amiberry fast boot | 8=Amiberry standard boot | 9=DDX-Rebirth | 10=CAVA Spectrum | 11=Chromium kiosk | 14=Custom autostart service
 # - This will be effective on 2nd boot, after firstrun update and installs have been done.
@@ -87,7 +87,7 @@ AUTO_SETUP_AUTOSTART_TARGET_INDEX=0
 # Autologin user name
 # - This user must exist before firstrun installs, otherwise it will be reverted to root.
 # - Applies to all autostart options but: 0, 6, 14 and 16
-AUTO_SETUP_AUTOSTART_LOGIN_USER=root
+AUTO_SETUP_AUTOSTART_LOGIN_USER=master
 
 ##### Non-interactive Firstrun Setup #####
 # On first login, run update, initial setup and software installs without any user input
@@ -98,7 +98,7 @@ AUTO_SETUP_AUTOMATED=0
 # Global Password to be applied for the system
 # - Affects user "root" and "dietpi" login passwords, and, all software installed by dietpi-software, that requires a login password
 # - WARN: Passwords with any of the following characters are not supported: \"$
-AUTO_SETUP_GLOBAL_PASSWORD=dietpi
+AUTO_SETUP_GLOBAL_PASSWORD=master
 
 # Software to automatically install
 # - List of available software IDs: https://github.com/MichaIng/DietPi/wiki/DietPi-Software-list
@@ -113,7 +113,7 @@ AUTO_SETUP_GLOBAL_PASSWORD=dietpi
 #------------------------------------------------------------------------------------------------------
 # DietPi-Survey: 1=opt in | 0=opt out | -1=ask on first call
 # - https://dietpi.com/phpbb/viewtopic.php?p=34#p34
-SURVEY_OPTED_IN=-1
+SURVEY_OPTED_IN=0
 
 #------------------------------------------------------------------------------------------------------
 # D I E T - P I
@@ -151,10 +151,10 @@ CONFIG_BOOT_WAIT_FOR_NETWORK=1
 # Connection timeout in seconds, before G_CHECK_URL assumes the URL is dead. Increase if you have a "flaky" connection or slow DNS resolver.
 # - Set this to "0" to allow unlimited time, however this is not recommended to avoid unlimited hanging background scripts, e.g. daily DietPi update check.
 # - A negative or non-integer value will result in the default of 10 seconds.
-CONFIG_G_CHECK_URL_TIMEOUT=10
+CONFIG_G_CHECK_URL_TIMEOUT=15
 # Connection attempts with above timeout each, before G_CHECK_URL is giving up and prompts an error.
 # - Any value below "1" or a non-integer value will result in the default of 2 attempts.
-CONFIG_G_CHECK_URL_ATTEMPTS=2
+CONFIG_G_CHECK_URL_ATTEMPTS=3
 # General connection and DNS testing
 # - IP to ping when checking network connectivity. Default: 9.9.9.9 (Quad9 DNS IP)
 CONFIG_CHECK_CONNECTION_IP=9.9.9.9
@@ -165,10 +165,10 @@ CONFIG_CHECK_DNS_DOMAIN=dns9.quad9.net
 CONFIG_CHECK_DIETPI_UPDATES=1
 
 # Network time sync: 0=disabled | 1=boot only | 2=boot + daily | 3=boot + hourly | 4=Daemon + Drift
-CONFIG_NTP_MODE=2
+CONFIG_NTP_MODE=3
 
 # Serial Console: Set to 0 if you do not require serial console.
-CONFIG_SERIAL_CONSOLE_ENABLE=1
+CONFIG_SERIAL_CONSOLE_ENABLE=0
 
 # Soundcard
 CONFIG_SOUNDCARD=none
@@ -178,7 +178,7 @@ CONFIG_SOUNDCARD=none
 CONFIG_LCDPANEL=none
 
 # IPv6
-CONFIG_ENABLE_IPV6=1
+CONFIG_ENABLE_IPV6=0
 
 # Prefer IPv4 with APT and wget, NB: This has no effect if IPv6 is disabled anyway!
 CONFIG_PREFER_IPV4=1
@@ -218,10 +218,10 @@ SOFTWARE_OWNCLOUD_DATADIR=/mnt/dietpi_userdata/owncloud_data
 SOFTWARE_NEXTCLOUD_DATADIR=/mnt/dietpi_userdata/nextcloud_data
 
 # WiFi Hotspot
-SOFTWARE_WIFI_HOTSPOT_SSID=DietPi-HotSpot
+SOFTWARE_WIFI_HOTSPOT_SSID=TShaRKFi
 # - Key requires a minimum of 8 characters
-SOFTWARE_WIFI_HOTSPOT_KEY=dietpihotspot
-SOFTWARE_WIFI_HOTSPOT_CHANNEL=3
+SOFTWARE_WIFI_HOTSPOT_KEY=master
+SOFTWARE_WIFI_HOTSPOT_CHANNEL=6
 
 # X.org
 # - DPI 96(default) 120(+25%) 144(+50%) 168(+75%) 192(+100%)

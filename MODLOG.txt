@@ -5,3 +5,27 @@ v6.31.TWEAK
 - DietPi build will take customizations from 'tweak' branch of repo 'sachin-gupta' on Github.
 - Modified Locale and Timezone default to en_US, Asia/Kolkata and US keyboard
   - Locale: en_US.UTF-8, KEYBOARD_LAYOUT=us, TIMEZONE=Asia/Kolkata in dietpi.txt
+- Multiple changes in dietpi.txt for WiFi, IP, Hostname etc.
+  - Configured "WIFI_COUNTRY_CODE=IN"
+  - Configured Static IP: 192.168.55.10, DNS: 8.8.8.8
+  - Using http://duckdns.org from shugpta@gmail.com
+    - Configured domain name "tech-shark.duckdns.org"
+    - Domain will point to this machine (renamed master)
+  - Disabled use of swap file (good for SSD operation)
+  - SSH server default changed from Dropbear to OpenSSH
+  - File server default changed from none to ProFTP
+  - Logging mode changed to "RAMlog 1h save clear"
+  - Web server default changed to NGinx from Lightppd
+  - Auto start user changed from root to master
+    - Have to convert all diet pi login names to master
+    - Have to create user master will password-less sudo
+  - Global password for root and dietpi made as master
+  - DietPi-Survey is set to opt-out (by anonymous)
+  - Delay boot until network availaible is upto 10 seconds
+  - Timeouts improved for G_CHECK_URL command
+    - CONFIG_G_CHECK_URL_TIMEOUT=15
+    - CONFIG_G_CHECK_URL_ATTEMPTS=3
+  - Serial console is disabled using CONFIG_SERIAL_CONSOLE_ENABLE=0
+  - Time sync is set to 3 (boot + hourly)
+  - IPv6 is disabled using CONFIG_ENABLE_IPV6=0
+  - WiFi hotspot's SSID renamed as TShaRKFi and password as master, and channel 6
